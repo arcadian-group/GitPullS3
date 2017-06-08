@@ -75,7 +75,7 @@ def pull_repo(repo, remote_url, creds, branch):
         remote = repo.create_remote('origin',remote_url)
     logger.info('Fetching and merging changes...')
     remote.fetch(callbacks=creds)
-    remote_master_id = repo.lookup_reference('refs/remotes/origin/' + banch).target
+    remote_master_id = repo.lookup_reference('refs/remotes/origin/' + branch).target
     repo.checkout_tree(repo.get(remote_master_id))
     master_ref = repo.lookup_reference('refs/heads/master')
     master_ref.set_target(remote_master_id)
