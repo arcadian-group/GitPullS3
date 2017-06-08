@@ -65,7 +65,7 @@ def create_repo(repo_path, remote_url, creds):
 
     return repo
 
-def pull_repo(repo, remote_url, creds):
+def pull_repo(repo, remote_url, creds, branch):
     remote_exists = False
     for r in repo.remotes:
         if r.url == remote_url:
@@ -75,7 +75,7 @@ def pull_repo(repo, remote_url, creds):
         remote = repo.create_remote('origin',remote_url)
     logger.info('Fetching and merging changes...')
     remote.fetch(callbacks=creds)
-    remote_master_id = repo.lookup_reference('refs/remotes/origin/master').target
+    remote_master_id = repo.lookup_reference('refs/remotes/origin/' + banch).target
     repo.checkout_tree(repo.get(remote_master_id))
     master_ref = repo.lookup_reference('refs/heads/master')
     master_ref.set_target(remote_master_id)
@@ -98,14 +98,14 @@ def zip_repo(repo_path,repo_name):
     zf.close()
     return '/tmp/'+repo_name.replace('/','_')+'.zip'
 
-def push_s3(filename,repo_name,outputbucket):
-    s3key='%s/%s' % (repo_name,filename.replace('/tmp/',''))
+def push_s3(filename, repo_name, outputbucket, branch):
+    s3key = '%s/%s/%s' % (repo_name, branch, filename.replace('/tmp/', ''))
     logger.info('pushing zip to s3://%s/%s' % (outputbucket,s3key))
     data=open(filename,'rb')
     s3.put_object(Bucket=outputbucket,Body=data,Key=s3key)
     logger.info('Completed S3 upload...')
 
-def lambda_handler(event,context):
+def lambda_handler(event, context):
     keybucket=event['context']['key-bucket']
     outputbucket=event['context']['output-bucket']
     pubkey=event['context']['public-key']
@@ -147,6 +147,10 @@ def lambda_handler(event,context):
             remote_url = 'git@'+event['body-json']['repository']['links']['html']['href'].replace('https://','').replace('/',':',1)+'.git'
         except:
             remote_url = event['body-json']['repository']['ssh_url']
+    try:
+        branch = event['body-json']['push']['changes'][0]['new']['name']
+    except:
+        branch = 'master'
     repo_path = '/tmp/%s' % repo_name
     creds = RemoteCallbacks( credentials=get_keys(keybucket,pubkey), )
     try:
@@ -156,9 +160,9 @@ def lambda_handler(event,context):
     except:
         logger.info('creating new repo for %s in %s' % (remote_url, repo_path))
         repo = create_repo(repo_path, remote_url, creds)
-    pull_repo(repo,remote_url,creds)
+    pull_repo(repo,remote_url,creds,branch)
     zipfile = zip_repo(repo_path, repo_name)
-    push_s3(zipfile,repo_name,outputbucket)
+    push_s3(zipfile,repo_name,outputbucket, branch)
     if cleanup:
         logger.info('Cleanup Lambda container...')
         shutil.rmtree(repo_path)
