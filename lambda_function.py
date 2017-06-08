@@ -158,7 +158,7 @@ def lambda_handler(event, context):
         repo = Repository(repository_path)
         logger.info('found existing repo, using that...')
     except:
-        logger.info('creating new repo for %s in %s' % (remote_url, repo_path))
+        logger.info('creating new repo for %s in %s on %s' % (remote_url, repo_path, branch))
         repo = create_repo(repo_path, remote_url, creds)
     pull_repo(repo,remote_url,creds,branch)
     zipfile = zip_repo(repo_path, repo_name)
