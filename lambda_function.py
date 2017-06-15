@@ -20,7 +20,7 @@ import hashlib
 exclude_git=True
 
 ### If true the function will delete all files at the end of each invocation, useful if you run into storage space constraints, but will slow down invocations as each invoke will need to checkout the entire repo
-cleanup=False
+cleanup=True
 
 key='enc_key'
 
