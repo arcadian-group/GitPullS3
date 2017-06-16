@@ -166,7 +166,7 @@ def lambda_handler(event, context):
     if cleanup:
         logger.info('Cleanup Lambda container...')
         shutil.rmtree(repo_path)
-        shutil.rm(zipfile)
-        shutil.rm('/tmp/id_rsa')
-        shutil.rm('/tmp/id_rsa.pub')
+        shutil.rmtree(zipfile)
+        shutil.rmtree('/tmp/id_rsa')
+        shutil.rmtree('/tmp/id_rsa.pub')
     return 'Successfully updated %s' % repo_name
